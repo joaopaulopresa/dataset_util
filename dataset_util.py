@@ -3,6 +3,10 @@ import pandas as pd
 
 import re
 import nltk
+from bs4 import BeautifulSoup
+from string import punctuation
+import unicodedata
+import string 
 
 def load_data_set(path,features):
     df = pd.read_excel(path, sheet_name='Planilha1')
@@ -52,8 +56,8 @@ def clean_data_set(df,features):
     return df
 
 
-def pre_processing_nilc(df):
-    df['desc_fato'] = df.desc_fato.apply(clean_text)
+def pre_processing_nilc(df,column):
+    df[column] = df.desc_fato.apply(clean_text)
     return df
 
 def clean_text(text):
@@ -116,3 +120,82 @@ def clean_text(text):
     text = re_trim.sub(' ', text)
     return text.strip()
     
+def ouvidoria_preprocessing_desc_fato(df,column,
+                   html_stripping=True,
+                   accented_char_removal=True,
+                   remove_extra_space=True,
+                   remove_punctuation=True,
+                   remove_num=True,
+                   remove_emails=True,
+                   remove_links=True,
+                   lowercase=True):
+    if html_stripping:
+            df[column] = df.desc_fato.apply(strip_html_tags)
+
+    # remove accented characters
+    if accented_char_removal:
+        df[column] = df[column].apply(remove_accented_chars)
+    
+    # remove emails 
+    if remove_emails:
+        df[column] = df[column].apply(remove_email)
+    
+    # remove links
+    if remove_links:
+        df[column] = df[column].apply(remove_website_links)
+
+    if remove_num:
+        df[column] = df[column].apply(remove_numbers)
+
+    #add space between punctuation
+    df[column] = df[column].apply(add_space)
+
+    # remove punctuation
+    if remove_punctuation:
+        df[column] = df[column].apply(strip_punctuation)
+    
+     # remove extra whitespace
+    if remove_extra_space:
+        df[column] = df[column].apply(remove_extra_whitespace)
+    
+    if lowercase:
+       df[column] = df[column].apply(lambda x:  x.lower())
+
+    return df
+# strip HTML
+def strip_html_tags(text):
+    soup = BeautifulSoup(text, "html.parser")
+    stripped_text = soup.get_text()
+    return stripped_text
+
+
+# remove accented characters
+def remove_accented_chars(text):
+    text = unicodedata.normalize('NFKD', text).encode('ascii',
+                                                      'ignore').decode(
+                                                          'utf-8', 'ignore')
+    return text
+
+
+# remove extra whitespace
+def remove_extra_whitespace(text):
+    return re.sub(' +', ' ', text)
+
+# remove punctuation
+def strip_punctuation(text):
+    return ''.join(c for c in text if c not in punctuation)
+
+#remove Numbers
+def remove_numbers(text):
+    return ''.join(c for c in text if not c.isdigit())
+
+#remove emails 
+def remove_email(text):
+    return re.sub(r"\S*@\S*\s?", ' ', text)
+
+def add_space(text):
+    return text.translate(str.maketrans({key: " {0} ".format(key) for key in string.punctuation}))
+
+# remove links
+def remove_website_links(text):
+    return re.sub(r"http\S+", ' ', text)
