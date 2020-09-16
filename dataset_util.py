@@ -7,7 +7,33 @@ from bs4 import BeautifulSoup
 from string import punctuation
 import unicodedata
 import string 
+from gensim import utils
+import gensim.parsing.preprocessing as gsp
 
+nltk.download('punkt')
+
+sent_tokenizer = nltk.data.load('tokenizers/punkt/portuguese.pickle')
+
+filters = [
+           gsp.strip_tags, 
+           #gsp.strip_punctuation,
+           gsp.strip_multiple_whitespaces,
+           gsp.strip_numeric,
+           #gsp.remove_stopwords, 
+           gsp.strip_short, 
+           #gsp.stem_text
+          ]
+
+def clean_text_gensim(s):
+    #s = s.lower()
+    s = s.replace('(a)', '')
+    s = utils.to_unicode(s)
+    for f in filters:
+        s = f(s)
+    return s
+def pre_processing_gensim(df,column):
+    df[column] = df.desc_fato.apply(clean_text_gensim)
+    return df
 def load_data_set(path,features):
     df = pd.read_excel(path, sheet_name='Planilha1')
     df = clean_data_set(df,features)
@@ -61,9 +87,7 @@ def pre_processing_nilc(df,column):
     return df
 
 def clean_text(text):
-    nltk.download('punkt')
-
-    sent_tokenizer = nltk.data.load('tokenizers/punkt/portuguese.pickle')
+    
 
     # Punctuation list
     punctuations = re.escape('!"#%\'()*+,./:;<=>?@[\\]^_`{|}~')
@@ -96,6 +120,7 @@ def clean_text(text):
     re_trim = re.compile(r' +', re.UNICODE)
     """Apply all regex above to a given string."""
     text = text.lower()
+    text = text.replace('(a)', '')
     text = text.replace('\xa0', ' ')
     text = re_tree_dots.sub('...', text)
     text = re.sub('\.\.\.', '', text)
