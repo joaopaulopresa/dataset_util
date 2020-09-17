@@ -14,6 +14,13 @@ nltk.download('punkt')
 
 sent_tokenizer = nltk.data.load('tokenizers/punkt/portuguese.pickle')
 remove_arr = ['(ais)','(â)','(eja)','(ª)','(os)','(es)','(o)','( a)','(S)','(m)','(ã)','(eis)','(ões)','(is)','(íram)','(as)','(a)','(ão)','(s)']
+# remove accented characters
+def remove_accented_chars(text):
+    text = unicodedata.normalize('NFKD', text).encode('ascii',
+                                                      'ignore').decode(
+                                                          'utf-8', 'ignore')
+    return text
+
 def remove_oc(s):
     for e in remove_arr:
         s = s.replace(e, '')
@@ -24,20 +31,33 @@ filters = [
            gsp.strip_multiple_whitespaces,
            gsp.strip_numeric,
            #gsp.remove_stopwords, 
-           gsp.strip_short, 
+           #gsp.strip_short, 
            #gsp.stem_text
           ]
+filters_full = [
+           gsp.strip_tags, 
+           gsp.strip_punctuation,
+           gsp.strip_multiple_whitespaces,
+           gsp.strip_numeric,
+           remove_accented_chars,
+           #gsp.remove_stopwords, 
+           gsp.strip_short, 
+           gsp.stem_text
+          ]
 
-def clean_text_gensim(s):
+def clean_text_gensim(s,full):
     #s = s.lower()
     for e in remove_arr:
         s = s.replace(e, '')
     s = utils.to_unicode(s)
-    for f in filters:
+    filtro = filters
+    if full:
+        filtro = filters_full
+    for f in filtro:
         s = f(s)
     return s
-def pre_processing_gensim(df,column):
-    df[column] = df.desc_fato.apply(clean_text_gensim)
+def pre_processing_gensim(df,column,full=False):
+    df[column] = df.desc_fato.apply(lambda x: clean_text_gensim(x,full))
     return df
 def load_data_set(path,features):
     df = pd.read_excel(path, sheet_name='Planilha1')
@@ -201,12 +221,6 @@ def strip_html_tags(text):
     return stripped_text
 
 
-# remove accented characters
-def remove_accented_chars(text):
-    text = unicodedata.normalize('NFKD', text).encode('ascii',
-                                                      'ignore').decode(
-                                                          'utf-8', 'ignore')
-    return text
 
 
 # remove extra whitespace
