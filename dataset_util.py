@@ -29,7 +29,7 @@ filters = [
            gsp.strip_tags, 
            #gsp.strip_punctuation,
            gsp.strip_multiple_whitespaces,
-           gsp.strip_numeric,
+           #gsp.strip_numeric,
            #gsp.remove_stopwords, 
            #gsp.strip_short, 
            #gsp.stem_text
@@ -107,11 +107,11 @@ def clean_data_set(df,features):
     return df
 
 
-def pre_processing_nilc(df,column):
-    df[column] = df.desc_fato.apply(clean_text)
+def pre_processing_nilc(df,column,lower=False):
+    df[column] = df.desc_fato.apply(lambda x: clean_text(x,lower))
     return df
 
-def clean_text(text):
+def clean_text(text,lower=False):
     
 
     # Punctuation list
@@ -144,7 +144,8 @@ def clean_text(text):
     re_doublequotes_2 = re.compile(r'(\'\')')
     re_trim = re.compile(r' +', re.UNICODE)
     """Apply all regex above to a given string."""
-    text = text.lower()
+    if lower:
+        text = text.lower()
     for e in remove_arr:
         text = text.replace(e, '')
     text = text.replace('\xa0', ' ')
