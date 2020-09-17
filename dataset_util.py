@@ -13,7 +13,11 @@ import gensim.parsing.preprocessing as gsp
 nltk.download('punkt')
 
 sent_tokenizer = nltk.data.load('tokenizers/punkt/portuguese.pickle')
-
+remove_arr = ['(ais)','(â)','(eja)','(ª)','(os)','(es)','(o)','( a)','(S)','(m)','(ã)','(eis)','(ões)','(is)','(íram)','(as)','(a)','(ão)','(s)']
+def remove_oc(s):
+    for e in remove_arr:
+        s = s.replace(e, '')
+    return s
 filters = [
            gsp.strip_tags, 
            #gsp.strip_punctuation,
@@ -26,7 +30,8 @@ filters = [
 
 def clean_text_gensim(s):
     #s = s.lower()
-    s = s.replace('(a)', '')
+    for e in remove_arr:
+        s = s.replace(e, '')
     s = utils.to_unicode(s)
     for f in filters:
         s = f(s)
@@ -120,7 +125,8 @@ def clean_text(text):
     re_trim = re.compile(r' +', re.UNICODE)
     """Apply all regex above to a given string."""
     text = text.lower()
-    text = text.replace('(a)', '')
+    for e in remove_arr:
+        text = text.replace(e, '')
     text = text.replace('\xa0', ' ')
     text = re_tree_dots.sub('...', text)
     text = re.sub('\.\.\.', '', text)
@@ -154,6 +160,7 @@ def ouvidoria_preprocessing_desc_fato(df,column,
                    remove_emails=True,
                    remove_links=True,
                    lowercase=True):
+    df['desc_fato'] = df.desc_fato.apply(remove_oc)
     if html_stripping:
             df[column] = df.desc_fato.apply(strip_html_tags)
 
